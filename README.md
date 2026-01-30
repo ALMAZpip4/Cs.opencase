@@ -18,7 +18,15 @@
             --upgrade-grad: linear-gradient(180deg, #00ff44 0%, #008822 100%);
         }
 
-        body {
+        body {<div id="auth-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; align-items:center; justify-content:center; color:white; font-family:sans-serif;">
+  <div style="background:#222; padding:30px; border-radius:10px; text-align:center; border: 1px solid #444;">
+    <h2 id="auth-title">Вход / Регистрация</h2>
+    <input type="text" id="auth-nick" placeholder="Никнейм" style="display:block; margin:10px auto; padding:10px; width:200px; border-radius:5px; border:none;"><br>
+    <input type="password" id="auth-pass" placeholder="Пароль" style="display:block; margin:10px auto; padding:10px; width:200px; border-radius:5px; border:none;"><br>
+    <button id="auth-btn" style="padding:10px 20px; cursor:pointer; background:#007bff; color:white; border:none; border-radius:5px;">Войти</button>
+    <p id="auth-msg" style="color:red; margin-top:10px; font-size:14px;"></p>
+  </div>
+</div>
             background-color: var(--bg);
             color: var(--text);
             font-family: 'Segoe UI', sans-serif;
