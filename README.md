@@ -60,8 +60,8 @@
 
         .spinner-wrap { position: relative; width: 100%; height: 120px; background: #050505; border: 2px solid #222; margin: 20px 0; overflow: hidden; border-radius: 10px; }
         .spinner-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: var(--accent); z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px var(--accent); }
-        .spinner-track { display: flex; position: absolute; left: 0; top: 10px; transition: transform 5s cubic-bezier(0.1, 0, 0.1, 1); will-change: transform; }
-        .spinner-item { min-width: 100px; height: 100px; margin: 0 5px; background: #111; border-bottom: 4px solid #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.5rem; text-align: center; padding: 5px; box-sizing: border-box; }
+        .spinner-track { display: flex; position: absolute; left: 0; top: 10px; transition: transform 5s cubic-bezier(0.1, 0, 0.1, 1); will-change: transform; align-items: center; }
+        .spinner-item { min-width: 100px; max-width: 100px; height: 100px; margin: 0 5px; background: #111; border-bottom: 4px solid #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.5rem; text-align: center; padding: 5px; box-sizing: border-box; flex-shrink: 0; }
 
         .upgrade-container { display: flex; justify-content: space-around; align-items: center; margin-top: 30px; gap: 15px; }
         .upg-slot { flex: 1; height: 150px; border: 2px dashed #333; border-radius: 15px; background: #0a0a0a; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: 0.3s; padding: 10px; }
@@ -213,7 +213,8 @@
         'Knives': { price: 15000, skins: [
             { name: "★ Karambit | Doppler", price: 120000, rarity: "Gold" },
             { name: "★ M9 Bayonet | Fade", price: 150000, rarity: "Gold" },
-            { name: "★ Butterfly | Lore", price: 250000, rarity: "Gold" }
+            { name: "★ Butterfly | Lore", price: 250000, rarity: "Gold" },
+            { name: "AWP | Dragon Lore", price: 1500000, rarity: "Gold" }
         ]},
         'Gloves': { price: 10000, skins: [
             { name: "★ Sport | Pandora", price: 350000, rarity: "Gold" },
@@ -275,7 +276,6 @@
         if(id === 'inventory') renderInv();
     }
 
-    // Logic for Cases, Inv, Upgrade (same as previous v28)
     function showCaseInfo(name) {
         const c = caseData[name];
         document.getElementById('m-title').innerText = name;
@@ -291,16 +291,43 @@
         const c = caseData[name];
         if(user.balance < c.price) return alert("Мало денег!");
         user.balance -= c.price; updateUI();
+        
         document.getElementById('m-view').style.display = 'none';
         document.getElementById('m-anim').style.display = 'block';
         document.getElementById('m-claim-btn').style.display = 'none';
-        const win = c.skins[Math.floor(Math.random()*c.skins.length)];
+        document.getElementById('m-win-info').innerText = 'открытие...';
+
+        const win = c.skins[Math.floor(Math.random() * c.skins.length)];
         const track = document.getElementById('spinner-track');
-        track.style.transition = "none"; track.style.transform = "translateX(0)";
-        let html = ""; for(let i=0; i<50; i++) { let s = (i===45) ? win : caseData['Revolution'].skins[Math.floor(Math.random()*5)]; html += `<div class="spinner-item ${s.rarity}">${s.name}</div>`; }
+        const winIndex = 40; 
+        const itemWidth = 110; 
+        
+        track.style.transition = "none"; 
+        track.style.transform = "translateX(0)";
+        
+        let html = ""; 
+        for(let i=0; i < 50; i++) { 
+            let s = (i === winIndex) ? win : c.skins[Math.floor(Math.random() * c.skins.length)]; 
+            html += `<div class="spinner-item ${s.rarity}">${s.name}</div>`; 
+        }
         track.innerHTML = html;
-        setTimeout(() => { track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.1, 1)"; track.style.transform = `translateX(-${(45*110) - 150}px)`; }, 50);
-        setTimeout(() => { user.inventory.push({...win, id: Date.now()}); document.getElementById('m-win-info').innerText = win.name; document.getElementById('m-claim-btn').style.display = 'block'; updateUI(); }, 5200);
+
+        setTimeout(() => {
+            const containerWidth = document.querySelector('.spinner-wrap').offsetWidth;
+            const centerOffset = containerWidth / 2;
+            const randomizePos = Math.floor(Math.random() * 80) - 40; 
+            const finalPos = (winIndex * itemWidth) - centerOffset + (itemWidth / 2) + randomizePos;
+            
+            track.style.transition = "transform 5s cubic-bezier(0.1, 0, 0.1, 1)";
+            track.style.transform = `translateX(-${finalPos}px)`;
+        }, 50);
+
+        setTimeout(() => { 
+            user.inventory.push({...win, id: Date.now()}); 
+            document.getElementById('m-win-info').innerText = win.name; 
+            document.getElementById('m-claim-btn').style.display = 'block'; 
+            updateUI(); 
+        }, 5200);
     }
 
     function renderInv() {
@@ -320,7 +347,6 @@
         if(code === "TEDO1" && !user.usedPromos.includes("TEDO1")) { user.balance += 1000; user.usedPromos.push("TEDO1"); updateUI(); alert("+1000 ₽"); }
     }
 
-    // Upgrade
     let upgSrc = null, upgTrg = null;
     function openUpgSelector(type) {
         const grid = document.getElementById('sel-grid');
@@ -329,10 +355,4 @@
             grid.innerHTML = user.inventory.map(s => `<div class="skin-card ${s.rarity}" onclick="selectUpg('source', '${s.id}')"><b>${s.name}</b><br>${s.price}₽</div>`).join('');
         } else {
             let all = []; for(let k in caseData) all = all.concat(caseData[k].skins);
-            grid.innerHTML = all.filter(s => upgSrc && s.price > upgSrc.price).map(s => `<div class="skin-card ${s.rarity}" onclick="selectUpg('target', '${s.name}')"><b>${s.name}</b><br>${s.price}₽</div>`).join('');
-        }
-    }
-    function selectUpg(type, key) {
-        if(type === 'source') { upgSrc = user.inventory.find(i => i.id == key); document.getElementById('upg-source-slot').innerHTML = upgSrc.name; document.getElementById('upg-source-slot').className = 'upg-slot filled '+upgSrc.rarity; }
-        else { let all = []; for(let k in caseData) all = all.concat(caseData[k].skins); upgTrg = all.find(i => i.name == key); document.getElementById('upg-target-slot').innerHTML = upgTrg.name; document.getElementById('upg-target-slot').className = 'upg-slot filled '+upgTrg.rarity; }
-        closeMod
+            grid.innerHTML = all.filter(s => upgSrc && s.price > upgSrc.price).map(s => `<div class="skin-card ${s.rari
